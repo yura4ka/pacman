@@ -2,12 +2,6 @@ export interface IDrawable {
   draw(ctx: CanvasRenderingContext2D): void;
 }
 
-export interface IMovable extends IDrawable {
-  move(): void;
-  start(): void;
-  pause(): void;
-}
-
 export const CellType = {
   EMPTY: "EMPTY",
   WALL: "WALL",
@@ -24,3 +18,12 @@ export const Direction = {
 } as const;
 
 export type TDirection = (typeof Direction)[keyof typeof Direction];
+
+export const GhostType = {
+  BLINKY: "BLINKY",
+  PINKY: "PINKY",
+  INKY: "INKY",
+  CLYDE: "CLYDE",
+} as const;
+
+export type TGhost = keyof typeof GhostType;

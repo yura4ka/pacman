@@ -2,6 +2,7 @@ import { IDrawable } from "./types/index";
 import {
   breakPoint,
   controlsMinWidth,
+  GRID_COLOR,
   remInPx,
   WALL_COLOR,
   WALLS,
@@ -36,7 +37,7 @@ export class Board implements IDrawable {
   }
 
   public drawGrid(ctx: CanvasRenderingContext2D) {
-    ctx.strokeStyle = "#7d7d7d";
+    ctx.strokeStyle = GRID_COLOR;
     for (let i = 0; i < Board.VERTICAL_TILES; i++) {
       for (let j = 0; j < Board.HORIZONTAL_TILES; j++) {
         const [x, y] = this.getRealPosition(j, i);

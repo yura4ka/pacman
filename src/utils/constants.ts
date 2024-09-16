@@ -15,6 +15,7 @@ export const remInPx = parseFloat(
 
 export const WALL_COLOR = "#000e91";
 export const PACMAN_COLOR = "#fdff00";
+export const GRID_COLOR = "#7d7d7d"
 
 export const WALLS = [
   [2, 2],

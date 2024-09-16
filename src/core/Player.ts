@@ -1,26 +1,17 @@
 import { PACMAN_COLOR } from "@/utils/constants";
 import { Board } from "./Board";
-import { CellType, Direction, IMovable, TDirection } from "./types";
+import { CellType, Direction, TDirection } from "./types";
+import { IMovable } from "./IMovable";
 
-export class Player implements IMovable {
-  private readonly _boardController: Board;
-
-  private _x: number;
-  private _y: number;
-  private _direction: TDirection = Direction.DOWN;
-  private _velocity = 0;
-
+export class Player extends IMovable {
   private _requestedDirection: TDirection | null = null;
 
   constructor(boardController: Board, cellX: number, cellY: number) {
-    this._boardController = boardController;
-    const size = this._boardController.tileSize;
-    this._x = cellX * size;
-    this._y = cellY * size;
-    this._addKeyListener();
+    super(boardController, cellX, cellY, Direction.UP, 2);
+    document.addEventListener("keydown", this._keyListener.bind(this));
   }
 
-  public draw(ctx: CanvasRenderingContext2D): void {
+  public override draw(ctx: CanvasRenderingContext2D): void {
     const size = this._boardController.tileSize / 2;
     ctx.fillStyle = PACMAN_COLOR;
     ctx.beginPath();
@@ -28,15 +19,7 @@ export class Player implements IMovable {
     ctx.fill();
   }
 
-  public start() {
-    this._velocity = 2;
-  }
-
-  public pause() {
-    this._velocity = 0;
-  }
-
-  public move() {
+  public override move() {
     if (this._requestedDirection && this._isSnappedToCell()) {
       const [x, y] = this._nextPosition(this._requestedDirection);
       if (!this._isCollidingWithWall(x, y)) {
@@ -104,27 +87,20 @@ export class Player implements IMovable {
     this._requestedDirection = direction;
   }
 
-  private _isSnappedToCell() {
-    const size = this._boardController.tileSize;
-    return this._x % size === 0 && this._y % size === 0;
-  }
-
-  private _addKeyListener() {
-    document.addEventListener("keydown", (e) => {
-      switch (e.key) {
-        case "ArrowUp":
-          this._changeDirection(Direction.UP);
-          break;
-        case "ArrowDown":
-          this._changeDirection(Direction.DOWN);
-          break;
-        case "ArrowLeft":
-          this._changeDirection(Direction.LEFT);
-          break;
-        case "ArrowRight":
-          this._changeDirection(Direction.RIGHT);
-          break;
-      }
-    });
+  private _keyListener(e: KeyboardEvent) {
+    switch (e.key) {
+      case "ArrowUp":
+        this._changeDirection(Direction.UP);
+        break;
+      case "ArrowDown":
+        this._changeDirection(Direction.DOWN);
+        break;
+      case "ArrowLeft":
+        this._changeDirection(Direction.LEFT);
+        break;
+      case "ArrowRight":
+        this._changeDirection(Direction.RIGHT);
+        break;
+    }
   }
 }
