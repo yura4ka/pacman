@@ -8,6 +8,7 @@ export class Player extends IMovable {
 
   constructor(boardController: Board, cellX: number, cellY: number) {
     super(boardController, cellX, cellY, Direction.UP, 2);
+    boardController.addPlayer(this);
     document.addEventListener("keydown", this._keyListener.bind(this));
   }
 

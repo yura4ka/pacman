@@ -12,7 +12,7 @@ export class Ghost extends IMovable {
     cellX: number,
     cellY: number
   ) {
-    super(boardController, cellX, cellY, Direction.UP, 1);
+    super(boardController, cellX, cellY, Direction.UP, 1.5);
     this._ghostController = ghostController;
   }
 
@@ -50,23 +50,33 @@ export class Ghost extends IMovable {
       this._boardController
     );
 
-    if (this._boardController.at(targetX, targetY) === CellType.WALL) return;
-
     const [cellX, cellY] = this._boardController.getCellCoordinates(
       this._x,
       this._y
     );
 
-    if (targetX === cellX && targetY === cellY) {
+    if (this._boardController.at(targetX, targetY) === CellType.WALL) return;
+
+    const path = this._boardController.findPath(
+      cellX,
+      cellY,
+      targetX,
+      targetY,
+      (node) => node.type !== CellType.WALL
+    );
+
+    const [nextX, nextY] = path?.at(-2)?.position ?? [cellX, cellY];
+
+    if (nextX === cellX && nextY === cellY) {
       this._velocity = 0;
       return;
     } else {
       this._velocity = this._defaultVelocity;
     }
 
-    if (targetX > cellX) this._direction = Direction.RIGHT;
-    else if (targetX < cellX) this._direction = Direction.LEFT;
-    else if (targetY > cellY) this._direction = Direction.DOWN;
-    else if (targetY < cellY) this._direction = Direction.UP;
+    if (nextX > cellX) this._direction = Direction.RIGHT;
+    else if (nextX < cellX) this._direction = Direction.LEFT;
+    else if (nextY > cellY) this._direction = Direction.DOWN;
+    else if (nextY < cellY) this._direction = Direction.UP;
   }
 }

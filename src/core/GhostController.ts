@@ -33,7 +33,7 @@ export class BlinkyController extends IGhostController {
     ctx.fillRect(x, y, size, size);
   }
 
-  public override getTargetCell(_board: Board): [number, number] {
-    return [20, 24];
+  public override getTargetCell(board: Board): [number, number] {
+    return board.getPlayerPosition();
   }
 }

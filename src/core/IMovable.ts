@@ -33,6 +33,18 @@ export abstract class IMovable implements IDrawable {
     this._velocity = 0;
   }
 
+  public get x() {
+    return this._x;
+  }
+
+  public get y() {
+    return this._y;
+  }
+
+  public get position(): [number, number] {
+    return [this._x, this._y];
+  }
+
   public abstract move(): void;
   public abstract draw(ctx: CanvasRenderingContext2D): void;
 
