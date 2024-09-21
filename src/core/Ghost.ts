@@ -1,10 +1,12 @@
 import { Board } from "./Board";
+import { Cell } from "./Cell";
 import { IGhostController } from "./GhostController";
 import { IMovable } from "./IMovable";
 import { CellType, Direction } from "./types";
 
 export class Ghost extends IMovable {
   private readonly _ghostController: IGhostController;
+  private _previousCell: [number, number] | null = null;
 
   constructor(
     ghostController: IGhostController,
@@ -62,7 +64,7 @@ export class Ghost extends IMovable {
       cellY,
       targetX,
       targetY,
-      (node) => node.type !== CellType.WALL
+      this._isValidNeighbor.bind(this)
     );
 
     const [nextX, nextY] = path?.at(-2)?.position ?? [cellX, cellY];
@@ -78,5 +80,25 @@ export class Ghost extends IMovable {
     else if (nextX < cellX) this._direction = Direction.LEFT;
     else if (nextY > cellY) this._direction = Direction.DOWN;
     else if (nextY < cellY) this._direction = Direction.UP;
+
+    this._previousCell = [cellX, cellY];
+  }
+
+  private _isValidNeighbor(
+    node: Cell,
+    neighbor: Cell,
+    previous: Cell | undefined
+  ) {
+    if (neighbor.type === CellType.WALL) return false;
+    if (!this._previousCell) return true;
+
+    const [px, py] = previous?.position ?? this._previousCell;
+    const [cx, cy] = node.position;
+    const [nx, ny] = neighbor.position;
+
+    if ((cx - px) * (nx - cx) < 0) return false;
+    if ((cy - py) * (ny - cy) < 0) return false;
+
+    return true;
   }
 }

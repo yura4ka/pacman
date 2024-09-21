@@ -1,3 +1,5 @@
+import { Cell } from "../Cell";
+
 export interface IDrawable {
   draw(ctx: CanvasRenderingContext2D): void;
 }
@@ -27,3 +29,9 @@ export const GhostType = {
 } as const;
 
 export type TGhost = keyof typeof GhostType;
+
+export type TValidNeighborFunction = (
+  node: Cell,
+  neighbor: Cell,
+  previous: Cell | undefined
+) => boolean;

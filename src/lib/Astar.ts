@@ -4,7 +4,7 @@ import { PriorityQueue } from "./PriorityQueue";
 export function astar<T>(
   start: T,
   target: T,
-  getNeighbors: (node: T) => T[],
+  getNeighbors: (node: T, previous: T | undefined) => T[],
   getDistance: (a: T, b: T) => number,
   heuristic: (n: T) => number
 ): T[] | null {
@@ -26,7 +26,8 @@ export function astar<T>(
     const current = discovered.dequeue()!;
     if (current === target) return restorePath(cameFrom, current);
 
-    for (const n of getNeighbors(current)) {
+    const previous = cameFrom.get(current);
+    for (const n of getNeighbors(current, previous)) {
       const score = gScore.get(current) + getDistance(current, n);
       if (score < gScore.get(n)) {
         cameFrom.set(n, current);
@@ -39,7 +40,17 @@ export function astar<T>(
     }
   }
 
-  return null;
+  let minScore = Infinity;
+  let approxTarget: T | null = null;
+
+  for (const [node, score] of fScore) {
+    if (score < minScore && node !== start) {
+      minScore = score;
+      approxTarget = node;
+    }
+  }
+
+  return approxTarget !== null ? restorePath(cameFrom, approxTarget) : null;
 }
 
 function restorePath<T>(cameFrom: Map<T, T>, current: T) {

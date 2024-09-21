@@ -1,4 +1,4 @@
-import { IDrawable } from "./types/index";
+import { IDrawable, TValidNeighborFunction, CellType, TCell } from "./types";
 import {
   breakPoint,
   controlsMinWidth,
@@ -7,10 +7,9 @@ import {
   WALL_COLOR,
   WALLS,
 } from "@/utils/constants";
-import { CellType, TCell } from "./types";
 import { Cell } from "./Cell";
-import { astar } from "@/lib/Astar";
 import { Player } from "./Player";
+import { astar } from "@/lib/Astar";
 
 export class Board implements IDrawable {
   private readonly _canvas: HTMLCanvasElement;
@@ -97,12 +96,12 @@ export class Board implements IDrawable {
     startY: number,
     targetX: number,
     targetY: number,
-    isValidNeighbor: (node: Cell) => boolean
+    isValidNeighbor: TValidNeighborFunction
   ) {
     const start = this._board[startY][startX];
     const target = this._board[targetY][targetX];
-    const getNeighbors = (node: Cell) =>
-      this.getNeighbors(node, isValidNeighbor);
+    const getNeighbors = (node: Cell, previous: Cell | undefined) =>
+      this.getNeighbors(node, previous, isValidNeighbor);
     const heuristic = (node: Cell) => Board.getDistance(node, target);
 
     return astar(start, target, getNeighbors, Board.getDistance, heuristic);
@@ -110,7 +109,8 @@ export class Board implements IDrawable {
 
   public getNeighbors(
     node: Cell,
-    isValidNeighbor = Board._defaultValidNeighbor
+    previous: Cell | undefined,
+    isValidNeighbor: TValidNeighborFunction = Board._defaultValidNeighbor
   ) {
     const result = [];
     const [x, y] = node.position;
@@ -127,7 +127,7 @@ export class Board implements IDrawable {
         nx < Board.HORIZONTAL_TILES &&
         ny >= 0 &&
         ny < Board.VERTICAL_TILES &&
-        isValidNeighbor(this._board[ny][nx])
+        isValidNeighbor(node, this._board[ny][nx], previous)
       ) {
         result.push(this._board[ny][nx]);
       }
@@ -136,9 +136,13 @@ export class Board implements IDrawable {
     return result;
   }
 
-  private static _defaultValidNeighbor(_node: Cell) {
+  private static _defaultValidNeighbor: TValidNeighborFunction = function (
+    _node: Cell,
+    _neighbor: Cell,
+    _previous: Cell | undefined
+  ) {
     return true;
-  }
+  };
 
   private _updateCanvasSize() {
     const screenWidth = window.innerWidth;

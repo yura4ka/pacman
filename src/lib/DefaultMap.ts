@@ -14,4 +14,8 @@ export class DefaultMap<K, V> {
   public get(key: K) {
     return this._map.get(key) ?? this._defaultValue;
   }
+
+  public [Symbol.iterator]() {
+    return this._map[Symbol.iterator]();
+  }
 }
