@@ -5,7 +5,7 @@ export abstract class IMovable implements IDrawable {
   protected readonly _boardController: Board;
   protected _x: number;
   protected _y: number;
-  protected _direction: TDirection;
+  private __direction: TDirection;
   protected _defaultVelocity: number;
   protected _velocity: number;
 
@@ -20,7 +20,7 @@ export abstract class IMovable implements IDrawable {
     const size = this._boardController.tileSize;
     this._x = x * size;
     this._y = y * size;
-    this._direction = direction;
+    this.__direction = direction;
     this._defaultVelocity = velocity;
     this._velocity = 0;
   }
@@ -45,11 +45,33 @@ export abstract class IMovable implements IDrawable {
     return [this._x, this._y];
   }
 
+  protected get _direction() {
+    return this.__direction;
+  }
+
+  protected set _direction(direction: TDirection) {
+    if (this.__direction === direction) return;
+    if (this.__direction + direction === 0) {
+      this.__direction = direction;
+      return;
+    }
+    this.__direction = direction;
+    this._x = Math.floor(this._x);
+    this._y = Math.floor(this._y);
+  }
+
   public abstract move(): void;
   public abstract draw(ctx: CanvasRenderingContext2D): void;
 
   protected _isSnappedToCell() {
     const size = this._boardController.tileSize;
-    return this._x % size === 0 && this._y % size === 0;
+    const speed = this._defaultVelocity;
+
+    const isXSnapped =
+      Math.floor((this._x - speed) / size) < Math.floor(this._x / size);
+    const isYSnapped =
+      Math.floor((this._y - speed) / size) < Math.floor(this._y / size);
+
+    return isXSnapped && isYSnapped;
   }
 }
