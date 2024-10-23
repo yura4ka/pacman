@@ -1,36 +1,48 @@
-import { IDrawable, TValidNeighborFunction, CellType, TCell } from "./types";
+import {
+  IDrawable,
+  TValidNeighborFunction,
+  CellType,
+  TCell,
+  TGhost,
+} from "./types";
 import {
   breakPoint,
   controlsMinWidth,
+  DEFAULT_BOARD,
   GRID_COLOR,
   remInPx,
   WALL_COLOR,
-  WALLS,
 } from "@/utils/constants";
 import { Cell } from "./Cell";
 import { Player } from "./Player";
 import { astar } from "@/lib/Astar";
+import { BoardGenerator } from "./BoardGenerator";
+import { Ghost } from "./Ghost";
+import { manhattanDistance } from "@/utils/numberUtils";
 
 export class Board implements IDrawable {
   private readonly _canvas: HTMLCanvasElement;
   private _tileSize = 8;
   private _board: Cell[][] = [];
   private _player: Player | null = null;
+  private _ghosts: Map<TGhost, Ghost> = new Map<TGhost, Ghost>();
+  private _horizontalTiles = Board.HORIZONTAL_TILES;
+  private _verticalTiles = Board.VERTICAL_TILES;
 
-  static readonly HORIZONTAL_TILES = 28;
-  static readonly VERTICAL_TILES = 36;
+  private static readonly HORIZONTAL_TILES = 28;
+  private static readonly VERTICAL_TILES = 36;
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, level = 0) {
     this._canvas = canvas;
+    this._generateBoard(level);
     this._updateCanvasSize();
     window.addEventListener("resize", this._updateCanvasSize.bind(this));
-    this._generateBoard(0);
   }
 
   public static getDistance(start: Cell, target: Cell) {
     const [sx, sy] = start.position;
     const [tx, ty] = target.position;
-    return Math.abs(sx - tx) + Math.abs(sy - ty);
+    return manhattanDistance(sx, sy, tx, ty);
   }
 
   public get tileSize() {
@@ -38,11 +50,19 @@ export class Board implements IDrawable {
   }
 
   public get width() {
-    return Board.HORIZONTAL_TILES * this._tileSize;
+    return this._horizontalTiles * this._tileSize;
   }
 
   public get height() {
-    return Board.VERTICAL_TILES * this._tileSize;
+    return this._verticalTiles * this._tileSize;
+  }
+
+  public get horizontalTiles() {
+    return this._horizontalTiles;
+  }
+
+  public get verticalTiles() {
+    return this._verticalTiles;
   }
 
   public addPlayer(player: Player) {
@@ -50,15 +70,28 @@ export class Board implements IDrawable {
     this._player = player;
   }
 
+  public addGhost(ghost: Ghost) {
+    this._ghosts.set(ghost.type, ghost);
+  }
+
+  public getGhost(type: TGhost) {
+    return this._ghosts.get(type);
+  }
+
   public getPlayerPosition() {
     if (!this._player) throw new Error("Player not found");
     return this.getCellCoordinates(this._player.x, this._player.y);
   }
 
+  public getPlayerDirections() {
+    if (!this._player) throw new Error("Player not found");
+    return this._player.direction;
+  }
+
   public drawGrid(ctx: CanvasRenderingContext2D) {
     ctx.strokeStyle = GRID_COLOR;
-    for (let i = 0; i < Board.VERTICAL_TILES; i++) {
-      for (let j = 0; j < Board.HORIZONTAL_TILES; j++) {
+    for (let i = 0; i < this._verticalTiles; i++) {
+      for (let j = 0; j < this._horizontalTiles; j++) {
         const [x, y] = this.getCanvasCoordinates(j, i);
         ctx.strokeRect(x, y, this._tileSize, this._tileSize);
       }
@@ -78,8 +111,8 @@ export class Board implements IDrawable {
   }
 
   public draw(ctx: CanvasRenderingContext2D) {
-    for (let i = 0; i < Board.VERTICAL_TILES; i++) {
-      for (let j = 0; j < Board.HORIZONTAL_TILES; j++) {
+    for (let i = 0; i < this._board.length; i++) {
+      for (let j = 0; j < this._board[i].length; j++) {
         const cell = this._board[i][j];
         const [x, y] = this.getCanvasCoordinates(j, i);
         if (cell.type === CellType.WALL) {
@@ -124,9 +157,9 @@ export class Board implements IDrawable {
     for (const [nx, ny] of lookup) {
       if (
         nx >= 0 &&
-        nx < Board.HORIZONTAL_TILES &&
+        nx < this._horizontalTiles &&
         ny >= 0 &&
-        ny < Board.VERTICAL_TILES &&
+        ny < this._verticalTiles &&
         isValidNeighbor(node, this._board[ny][nx], previous)
       ) {
         result.push(this._board[ny][nx]);
@@ -134,6 +167,49 @@ export class Board implements IDrawable {
     }
 
     return result;
+  }
+
+  public findNotWallPosition(
+    startX: number,
+    endX: number,
+    startY: number,
+    endY: number
+  ): [number, number] | null {
+    startX = Math.floor(startX);
+    startY = Math.floor(startY);
+    endX = Math.floor(endX);
+    endY = Math.floor(endY);
+
+    let y = startY;
+    let x = startX;
+    const compareY = () => {
+      if (startY < endY) return y < endY;
+      return y >= endY;
+    };
+    const increaseY = () => {
+      if (startY < endY) return y++;
+      return y--;
+    };
+    const compareX = () => {
+      if (startX < endX) return x < endX;
+      return x >= endX;
+    };
+    const increaseX = () => {
+      if (startX < endX) return x++;
+      return x--;
+    };
+
+    while (compareY()) {
+      while (compareX()) {
+        if (this.at(x, y) !== CellType.WALL) {
+          return [x, y];
+        }
+        increaseX();
+      }
+      increaseY();
+    }
+
+    return null;
   }
 
   private static _defaultValidNeighbor: TValidNeighborFunction = function (
@@ -153,36 +229,44 @@ export class Board implements IDrawable {
         ? screenWidth - controlsMinWidth - 6 * remInPx
         : screenWidth - 2 * remInPx;
     const maxHeight = screenHeight - 2 * remInPx;
-    const widthTiles = Math.floor(maxWidth / Board.HORIZONTAL_TILES);
-    const heightTiles = Math.floor(maxHeight / Board.VERTICAL_TILES);
+    const widthTiles = Math.floor(maxWidth / this._horizontalTiles);
+    const heightTiles = Math.floor(maxHeight / this._verticalTiles);
 
     this._tileSize = Math.min(widthTiles, heightTiles);
-    this._canvas.width = Board.HORIZONTAL_TILES * this._tileSize;
-    this._canvas.height = Board.VERTICAL_TILES * this._tileSize;
+    if (this._tileSize % 2 === 1) this._tileSize -= 1;
+    this._canvas.width = this._horizontalTiles * this._tileSize;
+    this._canvas.height = this._verticalTiles * this._tileSize;
   }
 
-  private _generateBoard(_level: number) {
-    this._board = new Array(Board.VERTICAL_TILES).fill(0);
-    for (let i = 0; i < Board.VERTICAL_TILES; i++) {
-      this._board[i] = new Array(Board.HORIZONTAL_TILES).fill(0);
-      for (let j = 0; j < Board.HORIZONTAL_TILES; j++) {
-        this._board[i][j] = new Cell(j, i, CellType.EMPTY);
+  private _generateLevel0() {
+    for (let y = 0; y < DEFAULT_BOARD.length; y++) {
+      const row = [];
+      for (let x = 0; x < DEFAULT_BOARD[y].length; x++) {
+        row.push(
+          new Cell(
+            x,
+            y,
+            DEFAULT_BOARD[y][x] === 1 ? CellType.WALL : CellType.EMPTY
+          )
+        );
       }
+      this._board.push(row);
+    }
+  }
+
+  private _generateBoard(level: number) {
+    if (level === 0) {
+      this._generateLevel0();
+    } else {
+      const generator = new BoardGenerator(
+        Board.HORIZONTAL_TILES,
+        Board.VERTICAL_TILES
+      );
+      this._board = generator.generateBoard(level);
     }
 
-    for (let i = 0; i < Board.VERTICAL_TILES; i++) {
-      this._board[i][0].type = CellType.WALL;
-      this._board[i][Board.HORIZONTAL_TILES - 1].type = CellType.WALL;
-    }
-
-    for (let i = 0; i < Board.HORIZONTAL_TILES; i++) {
-      this._board[0][i].type = CellType.WALL;
-      this._board[Board.VERTICAL_TILES - 1][i].type = CellType.WALL;
-    }
-
-    for (const [i, j] of WALLS) {
-      this._board[i][j].type = CellType.WALL;
-    }
+    this._horizontalTiles = this._board[0].length;
+    this._verticalTiles = this._board.length;
   }
 
   private _drawWall(ctx: CanvasRenderingContext2D, x: number, y: number) {

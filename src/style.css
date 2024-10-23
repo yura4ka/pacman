@@ -77,6 +77,26 @@
   background-color: #282828;
 }
 
+.levels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.level-btn {
+  border-radius: 5px;
+  border: none;
+  outline: none;
+  width: 2rem;
+  height: 2rem;
+  cursor: pointer;
+  transition: 250ms ease-in-out;
+}
+
+.level-btn.current {
+  background-color: #006b6b;
+}
+
 @media screen and (max-width: 900px) {
   #app {
     display: block;

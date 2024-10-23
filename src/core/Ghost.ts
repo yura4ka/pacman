@@ -14,8 +14,13 @@ export class Ghost extends IMovable {
     cellX: number,
     cellY: number
   ) {
-    super(boardController, cellX, cellY, Direction.UP, 1.5);
+    super(boardController, cellX, cellY, Direction.UP, 1.8);
     this._ghostController = ghostController;
+    this._boardController.addGhost(this);
+  }
+
+  public get type() {
+    return this._ghostController.type;
   }
 
   public override draw(ctx: CanvasRenderingContext2D) {
@@ -48,16 +53,15 @@ export class Ghost extends IMovable {
   private _changeMovement() {
     if (!this._isSnappedToCell()) return;
 
-    const [targetX, targetY] = this._ghostController.getTargetCell(
-      this._boardController
-    );
-
     const [cellX, cellY] = this._boardController.getCellCoordinates(
       this._x,
       this._y
     );
 
-    if (this._boardController.at(targetX, targetY) === CellType.WALL) return;
+    const [targetX, targetY] = this._ghostController.getTargetCell(
+      this._boardController,
+      [cellX, cellY]
+    );
 
     const path = this._boardController.findPath(
       cellX,
@@ -70,6 +74,9 @@ export class Ghost extends IMovable {
     const [nextX, nextY] = path?.at(-2)?.position ?? [cellX, cellY];
 
     if (nextX === cellX && nextY === cellY) {
+      this._velocity = 0;
+      return;
+    } else if (this._boardController.at(nextX, nextY) === CellType.WALL) {
       this._velocity = 0;
       return;
     } else {

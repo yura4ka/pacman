@@ -45,6 +45,10 @@ export abstract class IMovable implements IDrawable {
     return [this._x, this._y];
   }
 
+  public get direction() {
+    return this.__direction;
+  }
+
   protected get _direction() {
     return this.__direction;
   }
