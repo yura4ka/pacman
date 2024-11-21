@@ -44,11 +44,19 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: space-between;
   min-width: 300px;
   max-width: 600px;
-  padding-inline: 2rem;
+  padding: 2rem;
   border: 1px solid teal;
   gap: 1rem;
+}
+
+.controls-data {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
 }
 
 .btn {
@@ -94,6 +102,24 @@
 }
 
 .level-btn.current {
+  background-color: #006b6b;
+}
+
+.dialog {
+  margin: 0 auto;
+  top: 40%;
+  width: min(50%, 30rem);
+  padding: 2rem;
+}
+
+.dialog-btn {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #008080;
+  transition: 250ms ease-in-out;
+}
+
+.dialog-btn:hover {
   background-color: #006b6b;
 }
 

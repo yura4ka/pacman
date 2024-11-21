@@ -1,4 +1,4 @@
-import { manhattanDistance } from "@/utils/numberUtils";
+import { clamp, manhattanDistance } from "@/utils/numberUtils";
 import { Board } from "./Board";
 import { GhostType, TGhost } from "./types";
 
@@ -71,8 +71,14 @@ export class PinkyController extends IGhostController {
 
     if (distance <= 4) return position;
     if (Math.abs(direction) === 1)
-      return [position[0], position[1] + direction * 4];
-    return [position[0] + direction * 2, position[1]];
+      return [
+        position[0],
+        clamp(position[1] - direction * 4, 0, board.verticalTiles - 1),
+      ];
+    return [
+      clamp(position[0] - direction * 2, 0, board.horizontalTiles - 1),
+      position[1],
+    ];
   }
 }
 
@@ -102,8 +108,14 @@ export class InkyController extends IGhostController {
 
     if (distance <= 4) return position;
     if (Math.abs(direction) === 1)
-      return [position[0], position[1] - direction * 4];
-    return [position[0] - direction * 2, position[1]];
+      return [
+        clamp(position[0] - direction * 4, 0, board.horizontalTiles - 1),
+        clamp(position[1] - direction * 4, 0, board.verticalTiles - 1),
+      ];
+    return [
+      clamp(position[0] - direction * 2, 0, board.horizontalTiles - 1),
+      clamp(position[1] - direction * 2, 0, board.verticalTiles - 1),
+    ];
   }
 }
 

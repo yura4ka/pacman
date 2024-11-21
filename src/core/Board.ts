@@ -9,6 +9,7 @@ import {
   breakPoint,
   controlsMinWidth,
   DEFAULT_BOARD,
+  FRUIT_COLOR,
   GRID_COLOR,
   remInPx,
   WALL_COLOR,
@@ -28,6 +29,8 @@ export class Board implements IDrawable {
   private _ghosts: Map<TGhost, Ghost> = new Map<TGhost, Ghost>();
   private _horizontalTiles = Board.HORIZONTAL_TILES;
   private _verticalTiles = Board.VERTICAL_TILES;
+
+  public onFruitEaten?: () => void;
 
   private static readonly HORIZONTAL_TILES = 28;
   private static readonly VERTICAL_TILES = 36;
@@ -98,6 +101,15 @@ export class Board implements IDrawable {
     }
   }
 
+  public checkFruit() {
+    const [x, y] = this.getPlayerPosition();
+    if (this.at(x, y) !== CellType.FRUIT) return false;
+
+    this._board[y][x].type = CellType.EMPTY;
+    this.onFruitEaten?.();
+    return true;
+  }
+
   public getCanvasCoordinates(x: number, y: number): [number, number] {
     return [x * this._tileSize, y * this._tileSize];
   }
@@ -110,6 +122,11 @@ export class Board implements IDrawable {
     return this._board[y][x].type;
   }
 
+  public addFruits(level: number) {
+    if (level === 0) return;
+    this._board = BoardGenerator.fillWithFruits(this._board);
+  }
+
   public draw(ctx: CanvasRenderingContext2D) {
     for (let i = 0; i < this._board.length; i++) {
       for (let j = 0; j < this._board[i].length; j++) {
@@ -117,6 +134,8 @@ export class Board implements IDrawable {
         const [x, y] = this.getCanvasCoordinates(j, i);
         if (cell.type === CellType.WALL) {
           this._drawWall(ctx, x, y);
+        } else if (cell.type === CellType.FRUIT) {
+          this._drawFruit(ctx, x, y);
         }
         // ctx.fillStyle = "#fff";
         // ctx.fillText(`${i},${j}`, x, y + 20);
@@ -167,6 +186,22 @@ export class Board implements IDrawable {
     }
 
     return result;
+  }
+
+  public getNeighborsByCoordinates(x: number, y: number) {
+    return this.getNeighbors(this._board[y][x], undefined);
+  }
+
+  public countFruits() {
+    return this._board.reduce(
+      (acc, row) =>
+        acc +
+        row.reduce(
+          (acc2, cell) => acc2 + (cell.type === CellType.FRUIT ? 1 : 0),
+          0
+        ),
+      0
+    );
   }
 
   public findNotWallPosition(
@@ -242,13 +277,10 @@ export class Board implements IDrawable {
     for (let y = 0; y < DEFAULT_BOARD.length; y++) {
       const row = [];
       for (let x = 0; x < DEFAULT_BOARD[y].length; x++) {
-        row.push(
-          new Cell(
-            x,
-            y,
-            DEFAULT_BOARD[y][x] === 1 ? CellType.WALL : CellType.EMPTY
-          )
-        );
+        let type: TCell = CellType.EMPTY;
+        if (DEFAULT_BOARD[y][x] === 1) type = CellType.WALL;
+        else if (DEFAULT_BOARD[y][x] === 2) type = CellType.FRUIT;
+        row.push(new Cell(x, y, type));
       }
       this._board.push(row);
     }
@@ -272,5 +304,13 @@ export class Board implements IDrawable {
   private _drawWall(ctx: CanvasRenderingContext2D, x: number, y: number) {
     ctx.fillStyle = WALL_COLOR;
     ctx.fillRect(x, y, this._tileSize, this._tileSize);
+  }
+
+  private _drawFruit(ctx: CanvasRenderingContext2D, x: number, y: number) {
+    const size = this.tileSize / 4;
+    const middle = this.tileSize / 2;
+    ctx.fillStyle = FRUIT_COLOR;
+    ctx.roundRect(x + middle - size / 2, y + middle - size / 2, size, size);
+    ctx.fill();
   }
 }

@@ -8,13 +8,16 @@ export class Ghost extends IMovable {
   private readonly _ghostController: IGhostController;
   private _previousCell: [number, number] | null = null;
 
+  public onPlayerCaught?: () => void;
+
   constructor(
     ghostController: IGhostController,
     boardController: Board,
     cellX: number,
-    cellY: number
+    cellY: number,
+    speed: number
   ) {
-    super(boardController, cellX, cellY, Direction.UP, 1.8);
+    super(boardController, cellX, cellY, Direction.UP, speed);
     this._ghostController = ghostController;
     this._boardController.addGhost(this);
   }
@@ -50,7 +53,18 @@ export class Ghost extends IMovable {
     }
   }
 
+  public override resetPosition(x: number, y: number) {
+    super.resetPosition(x, y);
+    this._previousCell = null;
+  }
+
   private _changeMovement() {
+    if (this._checkPlayer()) {
+      this.onPlayerCaught?.();
+      this._velocity = 0;
+      return;
+    }
+
     if (!this._isSnappedToCell()) return;
 
     const [cellX, cellY] = this._boardController.getCellCoordinates(
@@ -74,14 +88,18 @@ export class Ghost extends IMovable {
     const [nextX, nextY] = path?.at(-2)?.position ?? [cellX, cellY];
 
     if (nextX === cellX && nextY === cellY) {
-      this._velocity = 0;
+      if (this.type === "INKY") console.log(path);
+      if (this._isStack()) this._direction *= -1;
+      else this._velocity = 0;
       return;
-    } else if (this._boardController.at(nextX, nextY) === CellType.WALL) {
-      this._velocity = 0;
-      return;
-    } else {
-      this._velocity = this._defaultVelocity;
     }
+
+    if (this._boardController.at(nextX, nextY) === CellType.WALL) {
+      this._velocity = 0;
+      return;
+    }
+
+    this._velocity = this._defaultVelocity;
 
     if (nextX > cellX) this._direction = Direction.RIGHT;
     else if (nextX < cellX) this._direction = Direction.LEFT;
@@ -89,6 +107,12 @@ export class Ghost extends IMovable {
     else if (nextY < cellY) this._direction = Direction.UP;
 
     this._previousCell = [cellX, cellY];
+  }
+
+  private _checkPlayer() {
+    const player = this._boardController.getPlayerPosition();
+    const ghost = this._boardController.getCellCoordinates(this._x, this._y);
+    return player[0] === ghost[0] && player[1] === ghost[1];
   }
 
   private _isValidNeighbor(
@@ -107,5 +131,13 @@ export class Ghost extends IMovable {
     if ((cy - py) * (ny - cy) < 0) return false;
 
     return true;
+  }
+
+  private _isStack() {
+    const cell = this._boardController.getCellCoordinates(this._x, this._y);
+    const walls = this._boardController
+      .getNeighborsByCoordinates(cell[0], cell[1])
+      .reduce((acc, wall) => acc + (wall.type === CellType.WALL ? 1 : 0), 0);
+    return walls === 3;
   }
 }

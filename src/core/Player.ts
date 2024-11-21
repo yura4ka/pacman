@@ -21,7 +21,10 @@ export class Player extends IMovable {
   }
 
   public override move() {
-    if (this._requestedDirection && this._isSnappedToCell()) {
+    const isSnapped = this._isSnappedToCell();
+    if (isSnapped) this._boardController.checkFruit();
+
+    if (this._requestedDirection && isSnapped) {
       const [x, y] = this._nextPosition(this._requestedDirection);
       if (!this._isCollidingWithWall(x, y)) {
         this._direction = this._requestedDirection;
@@ -89,6 +92,10 @@ export class Player extends IMovable {
   }
 
   private _keyListener(e: KeyboardEvent) {
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+      e.preventDefault();
+    }
+
     switch (e.key) {
       case "ArrowUp":
         this._changeDirection(Direction.UP);

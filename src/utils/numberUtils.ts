@@ -18,3 +18,7 @@ export function manhattanDistance(
 ) {
   return Math.abs(x2 - x1) + Math.abs(y2 - y1);
 }
+
+export function clamp(x: number, min: number, max: number) {
+  return Math.min(Math.max(x, min), max);
+}

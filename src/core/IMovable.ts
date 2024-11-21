@@ -6,6 +6,7 @@ export abstract class IMovable implements IDrawable {
   protected _x: number;
   protected _y: number;
   private __direction: TDirection;
+  private __defaultDirection: TDirection;
   protected _defaultVelocity: number;
   protected _velocity: number;
 
@@ -21,6 +22,7 @@ export abstract class IMovable implements IDrawable {
     this._x = x * size;
     this._y = y * size;
     this.__direction = direction;
+    this.__defaultDirection = direction;
     this._defaultVelocity = velocity;
     this._velocity = 0;
   }
@@ -64,8 +66,20 @@ export abstract class IMovable implements IDrawable {
     this._y = Math.floor(this._y);
   }
 
+  public resetPosition(x: number, y: number) {
+    const size = this._boardController.tileSize;
+    this._x = x * size;
+    this._y = y * size;
+    this.__direction = this.__defaultDirection;
+    this._velocity = this._defaultVelocity;
+  }
+
   public abstract move(): void;
   public abstract draw(ctx: CanvasRenderingContext2D): void;
+
+  public isSnapped() {
+    return this._isSnappedToCell();
+  }
 
   protected _isSnappedToCell() {
     const size = this._boardController.tileSize;

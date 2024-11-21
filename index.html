@@ -13,11 +13,27 @@
         <canvas id="canvas"></canvas>
       </div>
       <div id="controls">
-        <h1>Pacman</h1>
-        <div class="levels"></div>
+        <div class="controls-data">
+          <h1>Pacman</h1>
+          <div class="levels"></div>
+          <div class="score">
+            <h3>Score: <span id="score">0</span></h3>
+          </div>
+          <div class="score">
+            <h3>Lives: <span id="lives">0</span></h3>
+          </div>
+        </div>
         <button id="run-btn" class="btn">Start</button>
       </div>
     </div>
+    <dialog class="dialog" id="win-dialog">
+      <h3>You win!</h3>
+      <button class="btn dialog-btn">Cool</button>
+    </dialog>
+    <dialog class="dialog" id="lose-dialog">
+      <h3>You lose!</h3>
+      <button class="btn dialog-btn">Ok</button>
+    </dialog>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

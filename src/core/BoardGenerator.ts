@@ -1,6 +1,7 @@
 import { interpolate } from "@/utils/numberUtils";
 import { Cell } from "./Cell";
 import { CellType } from "./types";
+import { MAX_FRUITS } from "@/utils/constants";
 
 class MazeCell {
   public i: number;
@@ -71,6 +72,33 @@ export class BoardGenerator {
     }
     const result = this._convertToCells(board);
     return this._enclose(result);
+  }
+
+  public static fillWithFruits(board: Cell[][]) {
+    const count = Math.min(
+      MAX_FRUITS,
+      board.reduce(
+        (acc, row) =>
+          acc +
+          row.reduce(
+            (acc2, cell) => acc2 + (cell.type === CellType.EMPTY ? 1 : 0),
+            0
+          ),
+        0
+      )
+    );
+
+    let i = 0;
+    while (i !== count) {
+      const randomX = Math.floor(Math.random() * board[0].length);
+      const randomY = Math.floor(Math.random() * board.length);
+      if (board[randomY][randomX].type === CellType.EMPTY) {
+        board[randomY][randomX].type = CellType.FRUIT;
+        i++;
+      }
+    }
+
+    return board;
   }
 
   private _convertToCells(grid: number[][]) {
